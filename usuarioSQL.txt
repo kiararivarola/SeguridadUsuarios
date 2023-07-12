@@ -1,0 +1,13 @@
+-- public.usuario definition
+
+-- Drop table
+
+-- DROP TABLE public.usuario;
+
+CREATE TABLE public.usuario (
+	id serial4 NOT NULL,
+	login varchar(80) NULL,
+	"password" varchar(80) NULL,
+	activo bool NULL,
+	CONSTRAINT usuario_pk PRIMARY KEY (id)
+);
