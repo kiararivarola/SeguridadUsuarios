@@ -1,4 +1,5 @@
-﻿using Microsoft.AspNetCore.Authorization;
+﻿using infraestructure.model;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.IdentityModel.Tokens;
 using System.ComponentModel.DataAnnotations;
@@ -17,12 +18,14 @@ namespace seguridad.usuarios.Controllers
 
         //[Authorize]
         [HttpPost]
-        public IActionResult Autenticar([FromBody] LoginModel loginModel)
+        public IActionResult Autenticar([FromBody] UsuarioModel loginModel)
         {
-            if (!UsuarioAutenticado(loginModel.UserName, loginModel.Password))
+            if (loginModel.activo == false)
+                return Unauthorized();
+            if (!UsuarioAutenticado(loginModel.login, loginModel.password))
                 return Unauthorized();
 
-            var token = crearToken(loginModel.UserName);
+            var token = crearToken(loginModel.login);
 
             return Ok(token);
 
@@ -31,7 +34,27 @@ namespace seguridad.usuarios.Controllers
 
         private bool UsuarioAutenticado(string user, string password)
         {
-            return user == "admin" && password == "123456";
+            UsuarioModel usu = new UsuarioModel();
+            var connectionString = "Server=127.0.0.1;Port=5432;Database=parcial-2-optativo;User Id=postgres;Password=kiara";
+            using (var connection = new Npgsql.NpgsqlConnection(connectionString))
+            {
+                connection.Open();
+                var query = $"SELECT * FROM usuario WHERE login = '{user}'";
+                using (var command = new Npgsql.NpgsqlCommand(query, connection))
+                {
+                    using (var reader = command.ExecuteReader())
+                    {
+                        if (reader.Read())
+                        {
+                            var storedPassword = reader["password"].ToString();
+                            if (storedPassword == password)
+                                return true;
+                        }
+                        return false;
+
+                    }
+                }
+            }
         }
 
         private string crearToken(string user)
